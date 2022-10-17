@@ -120,7 +120,7 @@ class my_yolov6():
             det[:, :4] = self.rescale(img.shape[2:], det[:, :4], img_src.shape).round()
             for *xyxy, conf, cls in reversed(det):
                 class_num = int(cls)  # integer class
-                label = f'{self.class_names[class_num]} {conf:.2f}'
+                label = f'{self.class_names[class_num]}' #{conf:.2f}'
                 self.plot_box_and_label(img_src, max(round(sum(img_src.shape) / 2 * 0.003), 2), xyxy, label, color=(255,0,0))
 
             img_src = np.asarray(img_src)

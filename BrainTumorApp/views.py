@@ -14,14 +14,9 @@ from torchvision.utils import draw_bounding_boxes
 
 
 
-# from tensorflow.keras.applications import VGG16
-# from tensorflow.keras.layers import Flatten
-# from tensorflow.keras.layers import Dense
-# from tensorflow.keras.layers import Input
-# from tensorflow.keras.models import Model
-from tensorflow.keras.preprocessing.image import img_to_array
-from tensorflow.keras.preprocessing.image import load_img
-from tensorflow.keras.models import load_model
+# from tensorflow.keras.preprocessing.image import img_to_array
+# from tensorflow.keras.preprocessing.image import load_img
+# from tensorflow.keras.models import load_model
 
 # import matplotlib.pyplot as plt
 
@@ -83,7 +78,11 @@ model_predict.eval()
 # # construct the model we will fine-tune for bounding box regression
 # model_bbox = Model(inputs=vgg.input, outputs=bboxHead)
 
-model_bbox = load_model('bbox_regression.h5')
+# model_bbox = load_model('bbox_regression.h5')
+
+from my_yolov6 import my_yolov6
+
+yolov6_model = my_yolov6("best_ckpt.pt","cpu","data/mydataset.yml", 640, True)
 
 import imutils
 
@@ -153,8 +152,9 @@ def predictor(request):
             img = torch.unsqueeze(img, 0)
 
             # img_from_ar = Image.fromarray(imag, 'RGB')
-            # resized_image = img_from_ar.resize((3, 299, 299))
-            # imag_resized = np.array(resized_image)
+            # resized_image = img_from_ar.resize((299, 299))
+            # imag_resized = np.asarray(resized_image)
+
             # test_image =np.expand_dims(resized_image, axis=0) 
 
             outputs = model_predict(img)
@@ -165,31 +165,35 @@ def predictor(request):
                 prediction = "No"
             elif (result == 1):
                 prediction = "Yes"
-                img_test = load_img(path, target_size=(224, 224))
-                img_test = img_to_array(img_test) / 255.0
-                img_test = np.expand_dims(img_test, axis=0)
-                preds = model_bbox.predict(img_test)[0]
-                (startX, startY, endX, endY) = preds
-                # image = cv2.imread(path)
-                # img3 = imutils.resize(imag, width=600)
-                (h, w) = imag.shape[:2]
-                # scale the predicted bounding box coordinates based on the image
-                # dimensions
-                startX = int(startX * w)
-                startY = int(startY * h)
-                endX = int(endX * w)
-                endY = int(endY * h)
 
-                img1 = read_image(path)
+                imag, ndet = yolov6_model.infer(imag, conf_thres=0.4, iou_thres=0.45)
 
-                boxes = torch.tensor([[startX, startY, endX, endY]], dtype=torch.float)
+                # img_test = load_img(path, target_size=(224, 224))
+                # img_test = img_to_array(img_test) / 255.0
+                # img_test = np.expand_dims(img_test, axis=0)
+                # preds = model_bbox.predict(img_test)[0]
+                # (startX, startY, endX, endY) = preds
+                # # image = cv2.imread(path)
+                # # img3 = imutils.resize(imag, width=600)
+                # (h, w) = imag.shape[:2]
+                # # scale the predicted bounding box coordinates based on the image
+                # # dimensions
+                # startX = int(startX * w)
+                # startY = int(startY * h)
+                # endX = int(endX * w)
+                # endY = int(endY * h)
 
-                result1 = draw_bounding_boxes(img1, boxes, width=4)
-                result2 = torch.transpose(result1, 0, 2)
-                result2 = torch.transpose(result2, 0, 1)
-                result2 = result2.numpy()
-                # image = result1
-                cv2.imwrite(path, result2)
+                # img1 = read_image(path)
+
+                # boxes = torch.tensor([[startX, startY, endX, endY]], dtype=torch.float)
+
+                # result1 = draw_bounding_boxes(img1, boxes, width=4)
+                # result2 = torch.transpose(result1, 0, 2)
+                # result2 = torch.transpose(result2, 0, 1)
+                # result2 = result2.numpy()
+
+                cv2.imwrite(path, imag)
+
                 # _image = fss.save(image.name, image)
                 # image_url = fss.url(_image)
 
